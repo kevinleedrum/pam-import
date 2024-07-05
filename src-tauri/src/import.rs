@@ -7,6 +7,7 @@ use std::panic;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use crate::{emit_log, emit_progress, ProgressEventPayload};
 
@@ -185,9 +186,14 @@ fn get_exif_datetime(path: &Path) -> Option<NaiveDateTime> {
 
 fn get_file_datetime(path: &Path) -> Option<NaiveDateTime> {
     let metadata = fs::metadata(path).ok()?;
-    let created = metadata.created().ok()?;
-    let modified = metadata.modified().ok()?;
-    let older_time = std::cmp::min(created, modified);
+    let created = metadata.created().ok();
+    let modified = metadata.modified().ok();
+    let older_time = match (created, modified) {
+        (Some(c), Some(m)) => std::cmp::min(c, m),
+        (Some(c), None) => c,
+        (None, Some(m)) => m,
+        (None, None) => SystemTime::now(),
+    };
     let duration = older_time.duration_since(std::time::UNIX_EPOCH).ok()?;
     let seconds = duration.as_secs() as i64;
     let nanos = duration.subsec_nanos() as u32;
