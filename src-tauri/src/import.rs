@@ -109,23 +109,30 @@ pub async fn import_files(
             None => continue,
         };
 
-        let new_filename = format!("{}.{}", datetime.format(filename_template), ext);
+        let new_filename_no_ext = datetime.format(filename_template);
+        let new_filename = format!("{}.{}", new_filename_no_ext, ext);
         let mut new_path = Path::new(&destination).join(&new_filename);
 
-        if new_path.exists() && same_file(path, &new_path) {
-            emit_log(
-                app_handle.clone(),
-                format!("Skipping {}", new_path.display()),
-            );
-            skipped_count += 1;
-            continue;
-        }
-
         let mut dup_counter = 1;
+        let mut skipped = false;
         while new_path.exists() {
-            let new_filename_with_counter = format!("{}_{}.{}", new_filename, dup_counter, ext);
+            if same_file(path, &new_path) {
+                emit_log(
+                    app_handle.clone(),
+                    format!("Skipping {}", new_path.display()),
+                );
+                skipped = true;
+                skipped_count += 1;
+                break;
+            }
+            let new_filename_with_counter =
+                format!("{}_{}.{}", new_filename_no_ext, dup_counter, ext);
             new_path = Path::new(&destination).join(new_filename_with_counter);
             dup_counter += 1;
+        }
+
+        if skipped {
+            continue;
         }
 
         emit_progress(
