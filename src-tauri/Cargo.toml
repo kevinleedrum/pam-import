@@ -1,6 +1,6 @@
 [package]
 name = "pam-import"
-version = "1.0.0"
+version = "1.0.1"
 description = "Photo And Movie Import Tool"
 authors = ["Kevin Lee Drum"]
 edition = "2021"
